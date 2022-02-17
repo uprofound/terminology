@@ -6,7 +6,9 @@ from .models import Catalog, CatalogContent, CatalogVersion
 class CatalogAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'version_count')
     list_filter = ('id', 'short_name')
+    search_fields = ('name', 'description')
 
+    @admin.display(description='Кол-во версий',)
     def version_count(self, obj):
         return CatalogVersion.objects.filter(catalog=obj).count()
 

@@ -1,7 +1,7 @@
-from django.db.models import Max
 from rest_framework import serializers
 
-from .models import Catalog, CatalogVersion
+from .models import Catalog, CatalogContent, CatalogVersion
+from .utils import get_catalog_version_for_date
 
 
 class CatalogVersionSerializer(serializers.ModelSerializer):
@@ -21,25 +21,33 @@ class CatalogSerializer(serializers.ModelSerializer):
         """ Формируем перечень версий справочника в зависимости от
         переданной/не переданной в качестве параметра запроса актуальной даты.
         """
-        versions = CatalogVersion.objects.filter(catalog=catalog)
-
         request = self.context.get('request')
         actual_date = request.query_params.get('actual_date')
         if actual_date:
-            # сначала находим максимальную дату начала
-            # действия справочника ранее актуальной
-            catalog_max_date = versions.values('catalog').filter(
-                start_date__lte=actual_date
-            ).annotate(start_date=Max('start_date'))
-
-            if catalog_max_date:
-                # оставляем только актуальную версию справочника
-                versions = versions.filter(
-                    catalog=catalog_max_date[0].get('catalog'),
-                    start_date=catalog_max_date[0].get('start_date')
-                )
-            else:
-                versions = []
-
-        # если актуальная дата не передана - выдаются все версии справочника
+            version = get_catalog_version_for_date(catalog, actual_date)
+            return CatalogVersionSerializer(version).data
+        versions = CatalogVersion.objects.filter(catalog=catalog)
         return CatalogVersionSerializer(versions, many=True).data
+
+
+class ContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatalogContent
+        fields = ('code', 'value')
+
+
+class CatalogContentSerializer(serializers.ModelSerializer):
+    short_name = serializers.ReadOnlyField(source='catalog.short_name')
+    elements = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CatalogVersion
+        fields = (
+            'catalog', 'short_name', 'version', 'start_date', 'elements'
+        )
+
+    def get_elements(self, catalog_version):
+        content = CatalogContent.objects.filter(
+            catalog_version=catalog_version
+        )
+        return ContentSerializer(content, many=True).data
