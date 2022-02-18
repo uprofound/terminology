@@ -94,6 +94,10 @@ class CatalogContent(models.Model):
             models.CheckConstraint(
                 check=~models.Q(value=''),
                 name='value_not_empty'
+            ),
+            models.UniqueConstraint(
+                fields=['catalog_version', 'code'],
+                name='unique_catalog_version_code'
             )
         ]
         indexes = [

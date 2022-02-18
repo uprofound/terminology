@@ -1,8 +1,10 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import viewsets
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from .models import Catalog, CatalogVersion
+from .models import Catalog, CatalogContent, CatalogVersion
 from .serializers import CatalogContentSerializer, CatalogSerializer
 from .utils import get_catalog_version_for_date
 
@@ -40,3 +42,37 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'retrieve':
             return CatalogContentSerializer
         return CatalogSerializer
+
+    @action(detail=True)
+    def validate(self, *args, **kwargs):
+        """ Валидация элементов заданного справочника по коду
+        (и, опционально, значению).
+        Версия справочника определяется по переданной в качестве параметра
+        запроса 'version', иначе - берём актуальную на текущую дату.
+        """
+        # проверяем, что передан обязательный параметр валидации
+        code = self.request.query_params.get('code')
+        if not code:
+            return Response(
+                {'Не передан code - обязательный параметр валидации.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # получаем экземпляр справочника элемент которого проверяем
+        catalog_version = self.get_object(self)
+        # получаем значение элемента, если его тоже передали на проверку
+        value = self.request.query_params.get('value')
+        # валидируем элемент по переданным параметрам
+        if value:
+            get_object_or_404(
+                CatalogContent,
+                catalog_version=catalog_version,
+                code=code,
+                value=value
+            )
+            return Response(status=status.HTTP_200_OK)
+        get_object_or_404(
+            CatalogContent,
+            catalog_version=catalog_version,
+            code=code
+        )
+        return Response(status=status.HTTP_200_OK)
