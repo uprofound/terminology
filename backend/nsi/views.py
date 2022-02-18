@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -58,21 +59,50 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         # получаем экземпляр справочника элемент которого проверяем
-        catalog_version = self.get_object(self)
+        try:
+            catalog_version = self.get_object(self)
+        except Http404:
+            return Response(
+                {'id справочника или его версия заданы некорректно.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
         # получаем значение элемента, если его тоже передали на проверку
         value = self.request.query_params.get('value')
+
         # валидируем элемент по переданным параметрам
         if value:
+            try:
+                get_object_or_404(
+                    CatalogContent,
+                    catalog_version=catalog_version,
+                    code=code,
+                    value=value
+                )
+            except Http404:
+                return Response(
+                    {(f"Элемент справочника с кодом '{code}' "
+                      f"и значением '{value}' не найден.")},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            else:
+                return Response(
+                    {'Успешная валидация элемента справочника '
+                     'по коду и значению.'},
+                    status=status.HTTP_200_OK
+                )
+        try:
             get_object_or_404(
                 CatalogContent,
                 catalog_version=catalog_version,
-                code=code,
-                value=value
+                code=code
             )
-            return Response(status=status.HTTP_200_OK)
-        get_object_or_404(
-            CatalogContent,
-            catalog_version=catalog_version,
-            code=code
-        )
-        return Response(status=status.HTTP_200_OK)
+        except Http404:
+            return Response(
+                {f"Элемент справочника с кодом '{code}' не найден."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        else:
+            return Response(
+                {'Успешная валидация элемента справочника по коду.'},
+                status=status.HTTP_200_OK
+            )
