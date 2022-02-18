@@ -3,10 +3,12 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
 from .models import Catalog, CatalogContent, CatalogVersion
-from .serializers import CatalogContentSerializer, CatalogSerializer
+from .serializers import (CatalogContentSerializer, CatalogSerializer,
+                          CatalogVersionShowSerializer)
 from .utils import get_catalog_version_for_date
 
 
@@ -41,7 +43,7 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
-            return CatalogContentSerializer
+            return CatalogVersionShowSerializer
         return CatalogSerializer
 
     @action(detail=True)
@@ -106,3 +108,17 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
                 {'Успешная валидация элемента справочника по коду.'},
                 status=status.HTTP_200_OK
             )
+
+
+class CatalogContentView(ListAPIView):
+    serializer_class = CatalogContentSerializer
+
+    def get_queryset(self):
+        try:
+            catalog_version = CatalogViewSet.get_object(self)
+        except Http404:
+            return Response(
+                {'id справочника или его версия заданы некорректно.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        return CatalogContent.objects.filter(catalog_version=catalog_version)

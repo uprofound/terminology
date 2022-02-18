@@ -5,9 +5,17 @@ from .utils import get_catalog_version_for_date
 
 
 class CatalogVersionSerializer(serializers.ModelSerializer):
+    items_count = serializers.SerializerMethodField()
+
     class Meta:
         model = CatalogVersion
-        fields = ('version', 'start_date')
+        fields = ('version', 'start_date', 'items_count')
+
+    def get_items_count(self, catalog_version):
+        """Получаем кол-во элементов справочника."""
+        return CatalogContent.objects.filter(
+            catalog_version=catalog_version
+        ).count()
 
 
 class CatalogSerializer(serializers.ModelSerializer):
@@ -30,24 +38,15 @@ class CatalogSerializer(serializers.ModelSerializer):
         return CatalogVersionSerializer(versions, many=True).data
 
 
-class ContentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CatalogContent
-        fields = ('code', 'value')
-
-
-class CatalogContentSerializer(serializers.ModelSerializer):
+class CatalogVersionShowSerializer(serializers.ModelSerializer):
     short_name = serializers.ReadOnlyField(source='catalog.short_name')
-    elements = serializers.SerializerMethodField()
 
     class Meta:
         model = CatalogVersion
-        fields = (
-            'catalog', 'short_name', 'version', 'start_date', 'elements'
-        )
+        fields = ('short_name', 'version', 'start_date')
 
-    def get_elements(self, catalog_version):
-        content = CatalogContent.objects.filter(
-            catalog_version=catalog_version
-        )
-        return ContentSerializer(content, many=True).data
+
+class CatalogContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatalogContent
+        fields = ('id', 'code', 'value')
