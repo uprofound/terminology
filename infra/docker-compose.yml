@@ -1,0 +1,37 @@
+version: '3.3'
+
+volumes:
+  postgres_data:
+  static_value:
+
+services:
+  db:
+    image: postgres:12-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ../backend/.env
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - static_value:/terminology/static/
+    depends_on:
+      - db
+    env_file:
+      - ../backend/.env
+
+  nginx:
+    image: nginx:1.21.3-alpine
+    ports:
+      - 80:80
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_value:/var/html/static/
+    depends_on:
+      - backend
