@@ -1,17 +1,35 @@
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 
 from .models import Catalog, CatalogContent, CatalogVersion
+from .schemas import (CATALOG_CONTENT_PARAMS, CATALOG_LIST_PARAMS,
+                      CATALOG_RETRIEVE_PARAMS, ITEM_VALIDATE_PARAMS)
 from .serializers import (CatalogContentSerializer, CatalogSerializer,
                           CatalogVersionShowSerializer)
 from .utils import get_catalog_version_for_date
 
 
+@method_decorator(
+    name='list',
+    decorator=swagger_auto_schema(
+        operation_description='Получение списка справочников.',
+        manual_parameters=CATALOG_LIST_PARAMS,
+    ),
+)
+@method_decorator(
+    name='retrieve',
+    decorator=swagger_auto_schema(
+        operation_description='Просмотр информации о версии справочника.',
+        manual_parameters=CATALOG_RETRIEVE_PARAMS,
+    )
+)
 class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """ Формируем перечень справочников в зависимости от
@@ -26,9 +44,8 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
         return Catalog.objects.all()
 
     def get_object(self, pk=None):
-        """ Находим версию справочника в зависимости от указанной
-        конкретной версии, если она передана в качестве параметра
-        запроса 'version', иначе - актуальную на текущую дату.
+        """ Находим актуальную (на текущую дату) версию справочника,
+        либо версию, указанную в параметре version.
         """
         pk = self.kwargs.get('pk')
         version = self.request.query_params.get('version')
@@ -46,12 +63,21 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
             return CatalogVersionShowSerializer
         return CatalogSerializer
 
+    @swagger_auto_schema(
+        manual_parameters=ITEM_VALIDATE_PARAMS,
+        responses={
+            200: 'Успешная валидация элемента справочника '
+                 'по коду [и значению].',
+            400: 'Некорректный запрос, например, не передан '
+                 'code - обязательный параметр валидации.',
+            404: 'Элемент справочника с кодом "code" '
+                 '[и значением "value"] не найден.'
+        }
+    )
     @action(detail=True)
     def validate(self, *args, **kwargs):
-        """ Валидация элементов заданного справочника по коду
-        (и, опционально, значению).
-        Версия справочника определяется по переданной в качестве параметра
-        запроса 'version', иначе - берём актуальную на текущую дату.
+        """ Валидация элемента заданного справочника по коду [и значению]
+        в текущей версии справочника, либо переданной в параметре version.
         """
         # проверяем, что передан обязательный параметр валидации
         code = self.request.query_params.get('code')
@@ -110,6 +136,15 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
 
+@method_decorator(
+    name='get',
+    decorator=swagger_auto_schema(
+        operation_description=('Получение элементов заданного справочника '
+                               'текущей (или указанной) версии.'),
+        manual_parameters=CATALOG_CONTENT_PARAMS
+
+    )
+)
 class CatalogContentView(ListAPIView):
     serializer_class = CatalogContentSerializer
 

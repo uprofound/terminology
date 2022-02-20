@@ -9,7 +9,7 @@ router.register('catalogs', CatalogViewSet, basename='catalogs')
 
 urlpatterns = [
     path(
-        'catalogs/<int:pk>/content/',
+        'catalogs/<int:id>/content/',
         CatalogContentView.as_view(),
         name='content'
     ),
