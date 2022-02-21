@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from django.db import models
 
 
@@ -41,7 +42,15 @@ class CatalogVersion(models.Model):
         verbose_name='Версия'
     )
     start_date = models.DateField(
-        verbose_name='Дата начала действия'
+        verbose_name='Дата начала действия',
+        validators=[
+            RegexValidator(
+                regex=r'(?:199[0-9]|20[012][0-9])-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])',
+                message=('Дата должна быть в формате ГГГГ-ММ-ДД, '
+                         'где ГГГГ-год, ММ-месяц, ДД-день.')
+
+            )
+        ]
     )
 
     class Meta:
