@@ -1,3 +1,6 @@
+import json
+
+from django.conf import settings
 from drf_yasg import openapi
 
 CATALOG_LIST_PARAMS = [
@@ -76,3 +79,24 @@ ITEM_VALIDATE_PARAMS = [
         type=openapi.TYPE_STRING
     )
 ]
+
+
+examples_dir = settings.BASE_DIR / 'nsi' / 'response_examples'
+
+with open(
+        examples_dir / 'catalogs_200.json',
+        encoding='utf-8'
+) as json_file:
+    catalogs_200 = json.load(json_file)
+
+with open(
+        examples_dir / 'catalogs_id_200.json',
+        encoding='utf-8'
+) as json_file:
+    catalogs_id_200 = json.load(json_file)
+
+with open(
+        examples_dir / 'catalogs_id_content_200.json',
+        encoding='utf-8'
+) as json_file:
+    catalogs_id_content_200 = json.load(json_file)

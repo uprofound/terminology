@@ -2,6 +2,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -10,7 +11,8 @@ from rest_framework.response import Response
 
 from .models import Catalog, CatalogContent, CatalogVersion
 from .schemas import (CATALOG_CONTENT_PARAMS, CATALOG_LIST_PARAMS,
-                      CATALOG_RETRIEVE_PARAMS, ITEM_VALIDATE_PARAMS)
+                      CATALOG_RETRIEVE_PARAMS, ITEM_VALIDATE_PARAMS,
+                      catalogs_200, catalogs_id_200, catalogs_id_content_200)
 from .serializers import (CatalogContentSerializer, CatalogSerializer,
                           CatalogVersionShowSerializer)
 from .utils import get_catalog_version_for_date
@@ -21,6 +23,15 @@ from .utils import get_catalog_version_for_date
     decorator=swagger_auto_schema(
         operation_description='Получение списка справочников.',
         manual_parameters=CATALOG_LIST_PARAMS,
+        responses={
+            200: openapi.Response(
+                description='',
+                schema=CatalogSerializer,
+                examples={
+                    'application/json': catalogs_200
+                },
+            ),
+        }
     ),
 )
 @method_decorator(
@@ -28,6 +39,15 @@ from .utils import get_catalog_version_for_date
     decorator=swagger_auto_schema(
         operation_description='Просмотр информации о версии справочника.',
         manual_parameters=CATALOG_RETRIEVE_PARAMS,
+        responses={
+            200: openapi.Response(
+                description='',
+                schema=CatalogVersionShowSerializer,
+                examples={
+                    'application/json': catalogs_id_200
+                },
+            ),
+        }
     )
 )
 class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -141,7 +161,16 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
     decorator=swagger_auto_schema(
         operation_description=('Получение элементов заданного справочника '
                                'текущей (или указанной) версии.'),
-        manual_parameters=CATALOG_CONTENT_PARAMS
+        manual_parameters=CATALOG_CONTENT_PARAMS,
+        responses={
+            200: openapi.Response(
+                description='',
+                schema=CatalogContentSerializer,
+                examples={
+                    'application/json': catalogs_id_content_200
+                },
+            ),
+        }
 
     )
 )
@@ -149,11 +178,21 @@ class CatalogContentView(ListAPIView):
     serializer_class = CatalogContentSerializer
 
     def get_queryset(self):
-        try:
-            catalog_version = CatalogViewSet.get_object(self)
-        except Http404:
-            return Response(
-                {'id справочника или его версия заданы некорректно.'},
-                status=status.HTTP_404_NOT_FOUND
+        """ Формируем содержимое текущей версии указанного справочника,
+        либо версии, указанной в параметре version.
+        """
+        catalog_id = self.kwargs.get('id')
+        version = self.request.query_params.get('version')
+        if version:
+            catalog_version = get_object_or_404(
+                CatalogVersion,
+                catalog_id=catalog_id,
+                version=version
+            )
+        else:
+            # находим версию справочника, актуальную на текущую дату
+            catalog_version = get_catalog_version_for_date(
+                catalog_id,
+                timezone.localdate()
             )
         return CatalogContent.objects.filter(catalog_version=catalog_version)

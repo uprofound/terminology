@@ -1,0 +1,18 @@
+{
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": 2,
+            "name": "МКБ-10",
+            "short_name": "МКБ-10",
+            "description": null,
+            "versions": {
+                "version": "v1",
+                "start_date": "2022-01-01",
+                "items_count": 8
+            }
+        }
+    ]
+}
