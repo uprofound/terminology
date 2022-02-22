@@ -45,3 +45,23 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/terminology:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_push_to_docker_hub
+#    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: executing remote ssh commands to deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            cd terminology/infra/
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/terminology:latest
+            sudo docker-compose stop
+            sudo docker-compose rm backend
+            sudo fuser -k 80/tcp
+            sudo docker-compose up -d
