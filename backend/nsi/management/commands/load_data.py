@@ -4,7 +4,7 @@ import os
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from nsi.models import Catalog, CatalogContent, CatalogVersion
+from nsi.models import Catalog, CatalogContent, CatalogVersion  # isort:skip
 
 
 class Command(BaseCommand):
