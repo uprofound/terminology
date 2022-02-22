@@ -1,5 +1,12 @@
+[![terminology workflow](https://github.com/uprofound/terminology/actions/workflows/terminology_workflow.yml/badge.svg?branch=main)](https://github.com/uprofound/terminology/actions/workflows/terminology_workflow.yml)
+
 # Terminology - сервис терминологии 
-Сервис предоставляет API доступа и администрирования НСИ.
+Сервис предоставляет API доступа и администрирования НСИ,  
+доступен по адресу: <http://62.84.114.34/api/>.  
+
+Документация по API доступна по адресам:  
+<http://62.84.114.34/api/docs/swagger/> - в формате Swagger и  
+<http://62.84.114.34/api/docs/redoc/> - в формате ReDoc.
 
 ### Используемые технологии:
 Python 3.8.6  
