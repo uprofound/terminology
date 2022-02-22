@@ -1,4 +1,5 @@
 import json
+import os
 
 from django.conf import settings
 from drf_yasg import openapi
@@ -83,20 +84,17 @@ ITEM_VALIDATE_PARAMS = [
 
 examples_dir = settings.BASE_DIR / 'nsi' / 'response_examples'
 
-with open(
-        examples_dir / 'catalogs_200.json',
-        encoding='utf-8'
-) as json_file:
-    catalogs_200 = json.load(json_file)
+response_examples = {
+    'catalogs_200': None,
+    'catalogs_id_200': None,
+    'catalogs_id_content_200': None,
+}
 
-with open(
-        examples_dir / 'catalogs_id_200.json',
-        encoding='utf-8'
-) as json_file:
-    catalogs_id_200 = json.load(json_file)
-
-with open(
-        examples_dir / 'catalogs_id_content_200.json',
-        encoding='utf-8'
-) as json_file:
-    catalogs_id_content_200 = json.load(json_file)
+for example in response_examples:
+    try:
+        file_path = examples_dir / (example + '.json')
+        if os.path.isfile(file_path):
+            with open(file_path, encoding='utf-8') as json_file:
+                response_examples[example] = json.load(json_file)
+    except Exception as exc:
+        print(f'Ошибка при загрузке шаблона {file_path}: {exc}')

@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from .models import Catalog, CatalogContent, CatalogVersion
 from .schemas import (CATALOG_CONTENT_PARAMS, CATALOG_LIST_PARAMS,
                       CATALOG_RETRIEVE_PARAMS, ITEM_VALIDATE_PARAMS,
-                      catalogs_200, catalogs_id_200, catalogs_id_content_200)
+                      response_examples)
 from .serializers import (CatalogContentSerializer, CatalogSerializer,
                           CatalogVersionShowSerializer)
 from .utils import get_catalog_version_for_date
@@ -28,7 +28,7 @@ from .utils import get_catalog_version_for_date
                 description='',
                 schema=CatalogSerializer,
                 examples={
-                    'application/json': catalogs_200
+                    'application/json': response_examples.get('catalogs_200')
                 },
             ),
         }
@@ -44,7 +44,9 @@ from .utils import get_catalog_version_for_date
                 description='',
                 schema=CatalogVersionShowSerializer,
                 examples={
-                    'application/json': catalogs_id_200
+                    'application/json': response_examples.get(
+                        'catalogs_id_200'
+                    )
                 },
             ),
         }
@@ -167,11 +169,12 @@ class CatalogViewSet(viewsets.ReadOnlyModelViewSet):
                 description='',
                 schema=CatalogContentSerializer,
                 examples={
-                    'application/json': catalogs_id_content_200
+                    'application/json': response_examples.get(
+                        'catalogs_id_content_200'
+                    )
                 },
             ),
         }
-
     )
 )
 class CatalogContentView(ListAPIView):
